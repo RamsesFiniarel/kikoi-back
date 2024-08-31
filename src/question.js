@@ -1,4 +1,4 @@
-const classicQuestions = [
+export let classicQuestions = [
     "Quelle est ta couleur préférée et pourquoi ?",
     "Tu aimes le caca ? et pourquoi ?",
     "À combien estimes-tu le QI de ton voisin de droite ?",
@@ -31,7 +31,7 @@ const classicQuestions = [
     "Quel est le rituel du matin de ton voisin de gauche ?"
 ]
 
-const alcoolQuestions = [
+export let alcoolQuestions = [
     "Quel est le pire truc que pourrait faire ton voisin de gauche bouré ?",
     "Combien de shots peut tenir ton voisin de droite ?",
     "Pour quelle raison tu pourrais t'embrouiller en soirée ?",
@@ -44,7 +44,7 @@ const alcoolQuestions = [
     "Quelle est la meilleure photo que tu aies prise lors d'une soirée alcoolisée ?",
 ]
 
-const limitQuestions = [
+export let limitQuestions = [
     "Sur quel personnage fictif fantasmes-tu le plus ? (obligé de choisir)",
     "Quelle est la pire religion selon toi ?",
     "Si tu devais donner un titre à la sextape de ton voisin de droite, quel serait-il ?",
@@ -61,5 +61,3 @@ const limitQuestions = [
     "Si tu étais un dictateur célèbre, qui serais-tu ?",
     "Quelle serait l'introduction de ton discours à l'enterrement du big H ?",
 ]
-
-export default {classicQuestions, alcoolQuestions, limitQuestions}
