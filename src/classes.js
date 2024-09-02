@@ -27,7 +27,7 @@ export class lobby {
       player.is_master = true
     }
 
-    console.log("[" + this.game_id + "]:", player.surname, "joined room")
+    console.log("[" + this.game_id + "]:", player.surname, "joined lobby")
   }
 
   remove_player(socket_id) {
@@ -38,19 +38,58 @@ export class lobby {
       this.player_connected[0].is_master = true
     }
 
-    console.log("[" + this.game_id + "]:", player.surname, "exited room")
+    console.log("[" + this.game_id + "]:", player.surname, "exited lobby")
   }
 }
 
 
 export class game {
-  constructor(game_id, round_number, question_style, player_list) {
+  constructor(game_id, round_number_choice, question_style, player_list) {
     this.game_id = game_id
-    this.round_number = round_number
-    this.question_style = question_style
     this.player_list = player_list
     this.player_connected = []
     this.round_list = []
+
+    this.init_game(round_number_choice, question_style, player_list)
+    
+    console.log("[System]:", "Game", game_id, "created")
+  }
+
+  add_player(player_id, socket) {
+    let player = this.player_list.find(player => player.player_id == player_id)
+    if (player) {
+
+      // if socket different player dc and rc
+      if (player.socket_id != socket.id) {
+        player.socket_id = socket.id
+        socket.join(this.game_id)
+        console.log("[" + this.game_id + "]:", player.surname, "joined game again")
+      } else {
+        console.log("[" + this.game_id + "]:", player.surname, "joined game")
+      }
+
+      this.player_connected.push(player)
+
+      console.log(this.player_list, this.player_connected)
+      return true
+    }
+    return false
+  }
+
+  remove_player(socket_id) {
+    let player = this.player_connected.find(player => player.socket_id == socket_id)
+    this.player_connected.splice(this.player_connected.indexOf(player),1)
+
+    console.log("[" + this.game_id + "]:", player.surname, "exited game")
+  }
+
+  init_game(round_number_choice, question_style, player_list) {
+    let round_number = player_list.length
+    if (round_number_choice == "6") {
+      round_number = 6
+    } else if (round_number_choice == "12") {
+      round_number = 12
+    }
 
     let questions_list = question.classic_questions
     if (question_style == "alcool") {
@@ -60,10 +99,28 @@ export class game {
     } else if (question_style == "mix") {
       questions_list = question.classic_questions.concat(question.alcool_questions, question.limit_questions)
     }
-    questions_list = shuffle_array(questions_list).slice(0, this.player_list.length)
-    console.log(questions_list)
-    
-    console.log("[System]:", "Game", game_id, "created")
+    questions_list = shuffle_array(questions_list).slice(0, round_number)
+
+    let detective_list = player_list
+    if (detective_list.length < round_number) {
+      detective_list = detective_list.concat(detective_list).concat(detective_list)
+    }
+    detective_list = shuffle_array(detective_list).slice(0, round_number)
+  
+    for (let round_idx = 0; round_idx < round_number; round_idx++) {
+      let question = questions_list[round_idx]
+      let detective = detective_list[round_idx]
+
+      let possible_imposter = [...player_list]
+      possible_imposter.splice(possible_imposter.indexOf(detective), 1)
+      let imposter = shuffle_array(possible_imposter)[0]
+
+      let possible_target = [...possible_imposter]
+      possible_target.splice(possible_target.indexOf(imposter), 1)
+      let target = shuffle_array(possible_target)[0]
+      
+      this.round_list.push(new round(question, detective, imposter, target))
+    }
   }
 }
 
@@ -76,6 +133,8 @@ export class round {
     this.target = target
   }
 }
+
+
 
 /*
 // init questionsList and detectivesList
