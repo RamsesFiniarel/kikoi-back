@@ -1,7 +1,7 @@
 // gather questions
 import * as question from './question.js';
 
-export class player {
+export class player_lobby {
   constructor(surname, player_id, socket_id) {
       this.surname = surname
       this.player_id = player_id
@@ -20,6 +20,7 @@ export class lobby {
     console.log("[System]:", "Lobby", game_id, "created")
   }
 
+
   add_player(player) {
     this.player_connected.push(player)
 
@@ -29,6 +30,7 @@ export class lobby {
 
     console.log("[" + this.game_id + "]:", player.surname, "joined lobby")
   }
+
 
   remove_player(socket_id) {
     let player = this.player_connected.find(player => player.socket_id == socket_id)
@@ -43,46 +45,66 @@ export class lobby {
 }
 
 
+export class player_game {
+  constructor(surname, player_id, socket) {
+      this.surname = surname
+      this.player_id = player_id
+      this.socket = socket
+    }
+}
+
+
+export class round {
+  constructor(question, detective, imposter, target) {
+    this.question = question
+    this.detective = detective
+    this.imposter = imposter
+    this.target = target
+  }
+}
+
+
 export class game {
   constructor(game_id, round_number_choice, question_style, player_list) {
     this.game_id = game_id
-    this.player_list = player_list
+
+    this.player_id_list = []
+    for (let player of player_list) {
+      this.player_id_list.push(player.player_id)
+    }
+    
     this.player_connected = []
     this.round_list = []
+    this.current_round = 0
+    this.state = "init"
 
     this.init_game(round_number_choice, question_style, player_list)
     
     console.log("[System]:", "Game", game_id, "created")
   }
 
-  add_player(player_id, socket) {
-    let player = this.player_list.find(player => player.player_id == player_id)
-    if (player) {
 
-      // if socket different player dc and rc
-      if (player.socket_id != socket.id) {
-        player.socket_id = socket.id
-        socket.join(this.game_id)
-        console.log("[" + this.game_id + "]:", player.surname, "joined game again")
-      } else {
-        console.log("[" + this.game_id + "]:", player.surname, "joined game")
-      }
-
+  add_player(player) {
+    if (this.player_id_list.includes(player.player_id)) {
       this.player_connected.push(player)
-
-      console.log(this.player_list, this.player_connected)
+      console.log("[" + this.game_id + "]:", player.surname, "joined game")
       return true
     }
+
+    // return false if player trying to connect was not in the lobby previously
     return false
   }
 
+
   remove_player(socket_id) {
-    let player = this.player_connected.find(player => player.socket_id == socket_id)
+    let player = this.player_connected.find(player => player.socket.id == socket_id)
     this.player_connected.splice(this.player_connected.indexOf(player),1)
 
     console.log("[" + this.game_id + "]:", player.surname, "exited game")
   }
 
+
+  // create all rounds
   init_game(round_number_choice, question_style, player_list) {
     let round_number = player_list.length
     if (round_number_choice == "6") {
@@ -122,71 +144,28 @@ export class game {
       this.round_list.push(new round(question, detective, imposter, target))
     }
   }
-}
 
 
-export class round {
-  constructor(question, detective, imposter, target) {
-    this.question = question
-    this.detective = detective
-    this.imposter = imposter
-    this.target = target
-  }
-}
-
-
-
-/*
-// init questionsList and detectivesList
-function initGame(game) {
-  let questionsList = classicQuestions
-  if (game.mode == "alcool") {
-      questionsList = [...alcoolQuestions]
-  } else if (game.mode == "limit") {
-      questionsList = [...limitQuestions]
-  } else if (game.mode == "mix") {
-      questionsList = classicQuestions.concat(alcoolQuestions, limitQuestions)
-  }
-  questionsList = shuffleArray(questionsList).slice(0,game.players.length)
-  game.questionsList = questionsList
-
-
-  let detectivesList = shuffleArray(game.players)
-  if (game.numRound == "6") {
-      detectivesList = []
-      while (detectivesList.length < 6) {
-          detectivesList.push(game.players[Math.floor(Math.random()*game.players.length)])
+  // send round info
+  send_round_info() {
+    let round_info = this.round_list[this.current_round]
+    console.log(round_info)
+    for (let player of this.player_connected) {
+      let info = {
+        round_number: this.current_round,
+        question: round_info.question,
+        is_detective: player.player_id == round_info.detective.player_id,
+        detective: round_info.detective.surname,
+        is_imposter: player.player_id == round_info.imposter.player_id,
+        target: player.player_id == round_info.imposter.player_id ? round_info.target.surname : "",
       }
-  } else if (game.numRound == "12") {
-      detectivesList = []
-      while (detectivesList.length < 12) {
-          detectivesList.push(game.players[Math.floor(Math.random()*game.players.length)])
-      }
+
+      player.socket.emit("round_info", info)
+    }
+
+    this.state = "waiting_for_answers"
   }
-  game.detectivesList = detectivesList
 }
-
-
-// select a random detective out of the ones left, as well as an imposter/target couple and a question
-function initRound(game) {
-  let question = game.questionsList[0]
-  game.currentQuestion = question
-  game.questionsList.shift()
-
-
-  let detective = game.detectivesList[0]
-  game.currentDetective = detective
-  game.detectivesList.shift()
-
-  let possibleImposters = shuffleArray(game.players)
-  possibleImposters.splice(possibleImposters.indexOf(detective),1)
-  let imposter = possibleImposters[0]
-  let target = possibleImposters[1]
-  game.currentImposter = {imposter: imposter, target: target}
-
-  game.currentAnswers = []
-}
-*/
 
 
 // randomize array in-place using Durstenfeld shuffle algorithm

@@ -37,7 +37,6 @@ io.on("connection", (socket) => {
         let new_lobby = new classes.lobby(game_id, round_number, question_style)
         lobby_list.push(new_lobby)
         socket.emit("lobby_created")
-        console.log("[System]:", "Lobby", game_id, "was created")
     })
 
 
@@ -48,14 +47,14 @@ io.on("connection", (socket) => {
         // if lobby exists, add player to the list and send everyone list of players
         if (lobby) {
             socket.join(game_id)
-            let new_player = new classes.player(surname, player_id, socket.id)
+            let new_player = new classes.player_lobby(surname, player_id, socket.id)
             lobby.add_player(new_player)
             io.in(game_id).emit("players_lobby", lobby.player_connected)
         } 
         // if lobby doesn't, tell player he can't connect
         else {
-            console.log("[System]:", surname, "failed to connect to", game_id, "(Lobby does not exist)")
             socket.emit("unable_to_connect_to_lobby")
+            console.log("[System]:", surname, "failed to connect to", game_id, "(Lobby does not exist)")
         }
     })
 
@@ -82,18 +81,30 @@ io.on("connection", (socket) => {
     socket.on("join_game", ({surname, player_id, game_id}) => {
         let game = game_list.find(lobby => lobby.game_id == game_id)
         
-        // if lobby exists, add player to the list and send everyone list of players
+        // if game exists
         if (game) {
-            let could_add_player = game.add_player(player_id, socket)
+            let new_player = new classes.player_game(surname, player_id, socket)
+            let could_add_player = game.add_player(new_player)
+
+            // check if player was in lobby
             if (!could_add_player) {
-                console.log("[System]:", surname, "failed to connect to", game_id, "(Player was not in lobby)")
                 socket.emit("unable_to_connect_to_game")
+                console.log("[System]:", surname, "failed to connect to", game_id, "(Player was not in lobby)")
+            } 
+            
+            // if player was added check if can start game
+            else {
+                if (game.player_id_list.length == game.player_connected.length && game.state == "init") {
+                    game.state = "sending_round_info"
+                    game.send_round_info()
+                    console.log("[" + game_id + "]: all players connected, game will start")
+                }
             }
         } 
-        // if lobby doesn't, tell player he can't connect
+        // if game doesn't exist, tell player he can't connect
         else {
-            console.log("[System]:", surname, "failed to connect to", game_id, "(Game does not exit)")
             socket.emit("unable_to_connect_to_game")
+            console.log("[System]:", surname, "failed to connect to", game_id, "(Game does not exit)")
         }
     })
 
