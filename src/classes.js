@@ -76,6 +76,7 @@ export class game {
     this.player_connected = []
     this.round_list = []
     this.current_round = 0
+    this.answer_list = []
     this.state = "init"
 
     this.init_game(round_number_choice, question_style, player_list)
@@ -87,7 +88,15 @@ export class game {
   add_player(player) {
     if (this.player_id_list.includes(player.player_id)) {
       this.player_connected.push(player)
-      console.log("[" + this.game_id + "]:", player.surname, "joined game")
+
+      let rooms = [...player.socket.rooms]
+      if (rooms.includes(this.game_id)) {
+        console.log("[" + this.game_id + "]:", player.surname, "joined game")
+      } else {
+        player.socket.join(this.game_id)
+        console.log("[" + this.game_id + "]:", player.surname, "reconnected")
+      }
+      
       return true
     }
 
@@ -146,10 +155,9 @@ export class game {
   }
 
 
-  // send round info
-  send_round_info() {
+  // send everyone round info
+  send_everyone_round_info() {
     let round_info = this.round_list[this.current_round]
-    console.log(round_info)
     for (let player of this.player_connected) {
       let info = {
         round_number: this.current_round,
@@ -164,6 +172,68 @@ export class game {
     }
 
     this.state = "waiting_for_answers"
+  }
+
+
+  // send one user round info
+  send_round_info(player_id) {
+    let round_info = this.round_list[this.current_round]
+    let player = this.player_connected.find(player => player.player_id == player_id)
+    if (player) {
+      let info = {
+        round_number: this.current_round,
+        question: round_info.question,
+        is_detective: player.player_id == round_info.detective.player_id,
+        detective: round_info.detective.surname,
+        is_imposter: player.player_id == round_info.imposter.player_id,
+        target: player.player_id == round_info.imposter.player_id ? round_info.target.surname : "",
+      }
+
+      player.socket.emit("round_info", info)
+    }
+  }
+
+
+  // add answer
+  add_answer(player_id, answer) {
+    this.answer_list.push({
+      player_id: player_id,
+      answer: answer
+    })
+  }
+
+
+  // retrieve player who answered already
+  get_players_having_answered() {
+    let surname_list = []
+    for (let answer_mapping of this.answer_list) {
+      let player = this.player_connected.find(player => player.player_id == answer_mapping.player_id)
+      if (player) {
+        surname_list.push(player.surname)
+      }
+    }
+
+    return surname_list
+  }
+
+
+  // send help waiting for others
+  send_help_waiting_for_others(player_id) {
+    let round_info = this.round_list[this.current_round]
+    let player = this.player_connected.find(player => player.player_id == player_id)
+    if (player) {
+      let help_info = {
+        state: "waiting_for_others",
+        round_number: this.current_round,
+        question: round_info.question,
+        is_detective: player.player_id == round_info.detective.player_id,
+        detective: round_info.detective.surname,
+        is_imposter: player.player_id == round_info.imposter.player_id,
+        target: player.player_id == round_info.imposter.player_id ? round_info.target.surname : "",
+      }
+
+      player.socket.emit("help_after_dc", help_info)
+    }
   }
 }
 

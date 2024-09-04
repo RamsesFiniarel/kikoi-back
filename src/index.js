@@ -79,7 +79,7 @@ io.on("connection", (socket) => {
 
     // user joined a game
     socket.on("join_game", ({surname, player_id, game_id}) => {
-        let game = game_list.find(lobby => lobby.game_id == game_id)
+        let game = game_list.find(game => game.game_id == game_id)
         
         // if game exists
         if (game) {
@@ -92,12 +92,35 @@ io.on("connection", (socket) => {
                 console.log("[System]:", surname, "failed to connect to", game_id, "(Player was not in lobby)")
             } 
             
-            // if player was added check if can start game
+            // if player was indeed in lobby different actions depending on game state
             else {
-                if (game.player_id_list.length == game.player_connected.length && game.state == "init") {
-                    game.state = "sending_round_info"
-                    game.send_round_info()
-                    console.log("[" + game_id + "]: all players connected, game will start")
+                // check if everyone is connected to start game
+                if (game.state == "init") {
+                    if (game.player_id_list.length == game.player_connected.length) {
+                        game.state = "sending_round_info"
+                        game.send_everyone_round_info()
+                        console.log("[" + game_id + "]: all players connected, game will start")
+                    }
+                }
+
+                // send him back round info for him to answer
+                else if (game.state == "sending_round_info") {
+                    game.send_round_info(player_id)
+                }
+
+                // check if already sent answer, if yes tell to wait, if no send round info
+                else if (game.state == "waiting_for_answers") {
+                    let found_answer = game.answer_list.find(answer_mapping => answer_mapping.player_id == player_id)
+                    if (found_answer) {
+                        game.send_help_waiting_for_others(player_id)
+                    } else {
+                        game.send_round_info(player_id)
+                    }
+
+                    let player_having_answered = game.get_players_having_answered()
+                    if (player_having_answered.length > 0) {
+                        socket.emit("player_having_answered", player_having_answered)
+                    }
                 }
             }
         } 
@@ -105,6 +128,20 @@ io.on("connection", (socket) => {
         else {
             socket.emit("unable_to_connect_to_game")
             console.log("[System]:", surname, "failed to connect to", game_id, "(Game does not exit)")
+        }
+    })
+
+
+    // user sent his answer
+    socket.on("send_answer", ({player_id, game_id, answer}) => {
+        let game = game_list.find(game => game.game_id == game_id)
+        
+        // if game exists
+        if (game) {
+            game.add_answer(player_id, answer)
+
+            let player_having_answered = game.get_players_having_answered()
+            io.in(game_id).emit("player_having_answered", player_having_answered)
         }
     })
 
@@ -124,8 +161,7 @@ io.on("connection", (socket) => {
                     game_list.splice(game_list.indexOf(game),1)
                     console.log("[System]:", "Game", rooms[1], "was removed")
                 }
-
-            } 
+            }
             
             // if no game was found, try to find a lobby and do the same
             else {
