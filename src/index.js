@@ -141,7 +141,38 @@ io.on("connection", (socket) => {
             game.add_answer(player_id, answer)
 
             let player_having_answered = game.get_players_having_answered()
-            io.in(game_id).emit("player_having_answered", player_having_answered)
+
+            // if all answers received, send answers + player list
+            if (player_having_answered.length == game.player_id_list.length - 1) {
+                game.state = "waiting_for_mapping_and_preferred"
+                game.send_answers_and_players(player_having_answered)
+            } 
+            // if not all answers, send players having answered to all players
+            else {
+                io.in(game_id).emit("player_having_answered", player_having_answered)
+            }
+        }
+    })
+
+
+    // user sent his preferred answer
+    socket.on("send_preferred_answer", ({player_id, game_id, preferred_answer}) => {
+        let game = game_list.find(game => game.game_id == game_id)
+        
+        // if game exists
+        if (game) {
+            game.add_preferred_answer(player_id, preferred_answer)
+        }
+    })
+
+
+    // detective sent his mapping
+    socket.on("send_mapping", ({game_id, answer_player_mapping}) => {
+        let game = game_list.find(game => game.game_id == game_id)
+        
+        // if game exists
+        if (game) {
+            game.receive_mapping(answer_player_mapping)
         }
     })
 

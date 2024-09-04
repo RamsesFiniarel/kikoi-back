@@ -50,6 +50,7 @@ export class player_game {
       this.surname = surname
       this.player_id = player_id
       this.socket = socket
+      this.points = 0
     }
 }
 
@@ -77,6 +78,8 @@ export class game {
     this.round_list = []
     this.current_round = 0
     this.answer_list = []
+    this.preferred_answer_list = []
+    this.answer_player_mapping = []
     this.state = "init"
 
     this.init_game(round_number_choice, question_style, player_list)
@@ -205,15 +208,18 @@ export class game {
 
   // retrieve player who answered already
   get_players_having_answered() {
-    let surname_list = []
+    let surname_and_id_list = []
     for (let answer_mapping of this.answer_list) {
       let player = this.player_connected.find(player => player.player_id == answer_mapping.player_id)
       if (player) {
-        surname_list.push(player.surname)
+        surname_and_id_list.push({
+          surname: player.surname,
+          player_id: player.player_id
+        })
       }
     }
 
-    return surname_list
+    return surname_and_id_list
   }
 
 
@@ -234,6 +240,55 @@ export class game {
 
       player.socket.emit("help_after_dc", help_info)
     }
+  }
+
+
+  // send answers and players
+  send_answers_and_players(player_having_answered) {
+    let answers = []
+    for (let answer_mapping of this.answer_list) {
+      answers.push(answer_mapping.answer)
+    }
+    answers = shuffle_array(answers)
+
+    for (let player of this.player_connected) {
+      let answer_mapping = this.answer_list.find(answer_mapping => answer_mapping.player_id == player.player_id)
+      let my_answer = -1
+      if (answer_mapping) {
+        my_answer = answers.indexOf(answer_mapping.answer)
+      }
+      player.socket.emit("answers_and_players", {answers: answers, surname_and_id_list: player_having_answered, my_answer: my_answer})
+    }
+  }
+
+
+  // add preferred answer
+  add_preferred_answer(player_id, answer) {
+    this.preferred_answer_list.push({
+      player_id: player_id,
+      answer: answer
+    })
+
+    if (this.answer_player_mapping.length > 0 && this.player_id_list.length - 1 == this.preferred_answer_list.length) {
+      this.compute_round_result()
+    }
+  }
+
+
+  // receive mapping
+  receive_mapping(answer_player_mapping) {
+    this.answer_player_mapping = answer_player_mapping
+
+    if (this.answer_player_mapping.length > 0 && this.player_id_list.length - 1 == this.preferred_answer_list.length) {
+      this.compute_round_result()
+    }
+  }
+
+
+  // compute round results
+  compute_round_result() {
+    console.log("Time to compute round results")
+    let player_who_won_preferred_answer = []
   }
 }
 
