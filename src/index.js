@@ -162,6 +162,13 @@ io.on("connection", (socket) => {
         // if game exists
         if (game) {
             game.add_preferred_answer(player_id, preferred_answer)
+
+            if (game.detective_mapping.length > 0 && game.player_id_list.length - 1 == game.preferred_answer_list.length) {
+                game.compute_round_result()
+                io.in(game_id).emit("round_result", {result_list: game.result_list, point_list: game.point_list})
+            }
+
+            game.state = "waiting_next_round"
         }
     })
 
@@ -173,6 +180,13 @@ io.on("connection", (socket) => {
         // if game exists
         if (game) {
             game.receive_mapping(answer_player_mapping)
+
+            if (game.detective_mapping.length > 0 && game.player_id_list.length - 1 == game.preferred_answer_list.length) {
+                game.compute_round_result()
+                io.in(game_id).emit("round_result", {result_list: game.result_list, point_list: game.point_list})
+            }
+
+            game.state = "waiting_next_round"
         }
     })
 

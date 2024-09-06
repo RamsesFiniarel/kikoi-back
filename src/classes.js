@@ -3,11 +3,11 @@ import * as question from './question.js';
 
 export class player_lobby {
   constructor(surname, player_id, socket_id) {
-      this.surname = surname
-      this.player_id = player_id
-      this.socket_id = socket_id
-      this.is_master = false
-    }
+    this.surname = surname
+    this.player_id = player_id
+    this.socket_id = socket_id
+    this.is_master = false
+  }
 }
 
 
@@ -47,11 +47,11 @@ export class lobby {
 
 export class player_game {
   constructor(surname, player_id, socket) {
-      this.surname = surname
-      this.player_id = player_id
-      this.socket = socket
-      this.points = 0
-    }
+    this.surname = surname
+    this.player_id = player_id
+    this.socket = socket
+    this.points = 0
+  }
 }
 
 
@@ -61,6 +61,22 @@ export class round {
     this.detective = detective
     this.imposter = imposter
     this.target = target
+  }
+}
+
+
+export class answer_result {
+  constructor(answer, preferred_answer, writer_surname, detective_choice_surname_list, did_match_correctly, writer_was_imposter, 
+    target_surname, did_detective_swapped_imposter_target, did_imposter_wrote_the_same_as_target) {
+    this.answer = answer
+    this.preferred_answer = preferred_answer
+    this.writer_surname = writer_surname
+    this.detective_choice_surname_list = detective_choice_surname_list
+    this.did_match_correctly = did_match_correctly
+    this.writer_was_imposter = writer_was_imposter
+    this.target_surname = target_surname
+    this.did_detective_swapped_imposter_target = did_detective_swapped_imposter_target
+    this.did_imposter_wrote_the_same_as_target = did_imposter_wrote_the_same_as_target
   }
 }
 
@@ -79,7 +95,9 @@ export class game {
     this.current_round = 0
     this.answer_list = []
     this.preferred_answer_list = []
-    this.answer_player_mapping = []
+    this.detective_mapping = []
+    this.result_list = []
+    this.point_list = []
     this.state = "init"
 
     this.init_game(round_number_choice, question_style, player_list)
@@ -268,27 +286,126 @@ export class game {
       player_id: player_id,
       answer: answer
     })
-
-    if (this.answer_player_mapping.length > 0 && this.player_id_list.length - 1 == this.preferred_answer_list.length) {
-      this.compute_round_result()
-    }
   }
 
 
   // receive mapping
-  receive_mapping(answer_player_mapping) {
-    this.answer_player_mapping = answer_player_mapping
-
-    if (this.answer_player_mapping.length > 0 && this.player_id_list.length - 1 == this.preferred_answer_list.length) {
-      this.compute_round_result()
-    }
+  receive_mapping(detective_mapping) {
+    this.detective_mapping = detective_mapping
   }
 
 
   // compute round results
   compute_round_result() {
-    console.log("Time to compute round results")
+    let round_info = this.round_list[this.current_round]
+
+    // find players who won preferred answer
+    // code looks complicated because players might have the same surname + same answer
+    let preferred_answer_occ = {}
+    let chosen_answer = []
+    let max = 1
+    for (let answer_mapping of this.preferred_answer_list) {
+      let answer = answer_mapping.answer
+      preferred_answer_occ[answer] = preferred_answer_occ[answer] ? preferred_answer_occ[answer] + 1 : 1;
+
+      if (preferred_answer_occ[answer] > max) {
+        max = preferred_answer_occ[answer]
+        chosen_answer = [answer]
+      } else if (preferred_answer_occ[answer] == max) {
+        chosen_answer.push(answer)
+      }
+    }
+
     let player_who_won_preferred_answer = []
+    for (let answer_mapping of this.answer_list) {
+      if (chosen_answer.includes(answer_mapping.answer)) {
+        player_who_won_preferred_answer.push(answer_mapping.player_id)
+        this.player_connected.find(player => player.player_id == answer_mapping.player_id).points += 1
+      }
+    }
+
+
+    // find players who were found by the detective
+    let player_who_were_correctly_matched = []
+    for (let detective_choice of this.detective_mapping) {
+      let real_mapping = this.answer_list.find(answer_mapping => answer_mapping.player_id == detective_choice.player_id)
+      if (real_mapping.answer == detective_choice.answer) {
+        player_who_were_correctly_matched.push(detective_choice.player_id)
+      }
+    }
+
+    this.player_connected.find(player => player.player_id == round_info.detective.player_id).points += player_who_were_correctly_matched.length
+
+
+    // find if detective swapped imposter and target
+    let imposter_answer = this.answer_list.find(answer_mapping => answer_mapping.player_id == round_info.imposter.player_id).answer
+    let detective_supposed_target_answer = this.detective_mapping.find(answer_mapping => answer_mapping.player_id == round_info.target.player_id).answer
+    const did_detective_swapped_imposter_target = imposter_answer == detective_supposed_target_answer
+
+    if (did_detective_swapped_imposter_target) {
+      this.player_connected.find(player => player.player_id == round_info.imposter.player_id).points += 2
+    }
+
+    // find if imposter wrote exactly the same answer as his target
+    let target_answer = this.answer_list.find(answer_mapping => answer_mapping.player_id == round_info.target.player_id).answer
+    const did_imposter_wrote_the_same_as_target = imposter_answer == target_answer
+
+    if (did_imposter_wrote_the_same_as_target) {
+      this.player_connected.find(player => player.player_id == round_info.imposter.player_id).points += 3
+    }
+
+
+    // create answer list
+    for (let answer_mapping of this.answer_list) {
+      let answer = answer_mapping.answer
+      let preferred_answer = player_who_won_preferred_answer.includes(answer_mapping.player_id)
+
+      let writer = this.player_connected.find(player => player.player_id == answer_mapping.player_id)
+      let writer_surname = writer.surname
+
+      let detective_choice_surname_list = []
+      for (let detective_choice of this.detective_mapping) {
+        if (detective_choice.answer == answer && detective_choice.player_id != writer.player_id) {
+          detective_choice_surname_list.push(this.player_connected.find(player => player.player_id == detective_choice.player_id).surname)
+        }
+      }
+
+      let did_match_correctly = player_who_were_correctly_matched.includes(answer_mapping.player_id)
+
+      let writer_was_imposter = false
+      let target_surname = ""
+      let player_did_detective_swapped_imposter_target = false
+      let player_did_imposter_wrote_the_same_as_target = false
+
+      if (round_info.imposter.player_id == answer_mapping.player_id) {
+        writer_was_imposter = true
+        target_surname = round_info.target.surname
+        player_did_detective_swapped_imposter_target = did_detective_swapped_imposter_target
+        player_did_imposter_wrote_the_same_as_target = did_imposter_wrote_the_same_as_target
+      }
+
+      let new_result = new answer_result(answer, preferred_answer, writer_surname, detective_choice_surname_list, did_match_correctly,
+        writer_was_imposter, target_surname, player_did_detective_swapped_imposter_target, player_did_imposter_wrote_the_same_as_target)
+      
+      this.result_list.push(new_result)
+    }
+
+    this.compute_point_list()
+  }
+
+
+  // return mapping between player id and points
+  compute_point_list() {
+    let point_list = []
+    for (let player of this.player_connected) {
+      point_list.push({
+        surname: player.surname,
+        player_id: player.player_id,
+        points: player.points
+      })
+    }
+
+    this.point_list = point_list
   }
 }
 
