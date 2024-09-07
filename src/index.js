@@ -122,6 +122,24 @@ io.on("connection", (socket) => {
                         socket.emit("player_having_answered", player_having_answered)
                     }
                 }
+
+                else if (game.state == "waiting_for_mapping_and_preferred") {
+                    let round_info = game.round_list[game.current_round]
+                    let is_detective = round_info.detective.player_id == player_id
+                    if (is_detective) {
+                        if (game.detective_mapping.length > 0) {
+                            game.send_waiting_for_round_result(player_id)
+                        } else {
+                            game.send_help_answers_and_players(player_id)
+                        }
+                    } else {
+                        if (game.preferred_answer_list.find(preferred_answer_mapping => preferred_answer_mapping.player_id == player_id)) {
+                            game.send_waiting_for_round_result(player_id)
+                        } else {
+                            game.send_help_answers_and_players(player_id)
+                        }
+                    }
+                }
             }
         } 
         // if game doesn't exist, tell player he can't connect
@@ -167,9 +185,8 @@ io.on("connection", (socket) => {
                 game.compute_round_result()
                 const is_last_round = game.current_round == game.round_list.length - 1
                 io.in(game_id).emit("round_result", {result_list: game.result_list, point_list: game.point_list, is_last_round: is_last_round})
+                game.state = "waiting_next_round"
             }
-
-            game.state = "waiting_next_round"
         }
     })
 
@@ -186,9 +203,8 @@ io.on("connection", (socket) => {
                 game.compute_round_result()
                 const is_last_round = game.current_round == game.round_list.length - 1
                 io.in(game_id).emit("round_result", {result_list: game.result_list, point_list: game.point_list, is_last_round: is_last_round})
+                game.state = "waiting_next_round"
             }
-
-            game.state = "waiting_next_round"
         }
     })
 
