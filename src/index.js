@@ -165,7 +165,8 @@ io.on("connection", (socket) => {
 
             if (game.detective_mapping.length > 0 && game.player_id_list.length - 1 == game.preferred_answer_list.length) {
                 game.compute_round_result()
-                io.in(game_id).emit("round_result", {result_list: game.result_list, point_list: game.point_list})
+                const is_last_round = game.current_round == game.round_list.length - 1
+                io.in(game_id).emit("round_result", {result_list: game.result_list, point_list: game.point_list, is_last_round: is_last_round})
             }
 
             game.state = "waiting_next_round"
@@ -183,10 +184,36 @@ io.on("connection", (socket) => {
 
             if (game.detective_mapping.length > 0 && game.player_id_list.length - 1 == game.preferred_answer_list.length) {
                 game.compute_round_result()
-                io.in(game_id).emit("round_result", {result_list: game.result_list, point_list: game.point_list})
+                const is_last_round = game.current_round == game.round_list.length - 1
+                io.in(game_id).emit("round_result", {result_list: game.result_list, point_list: game.point_list, is_last_round: is_last_round})
             }
 
             game.state = "waiting_next_round"
+        }
+    })
+
+
+    // detective ask for next round
+    socket.on("send_next_round", (game_id) => {
+        let game = game_list.find(game => game.game_id == game_id)
+        
+        // if game exists
+        if (game) {
+            game.state = "sending_round_info"
+            game.reset_variable_for_next_round()
+            game.send_everyone_round_info()
+        }
+    })
+
+
+    // detective ask for result
+    socket.on("send_to_result", (game_id) => {
+        let game = game_list.find(game => game.game_id == game_id)
+        
+        // if game exists
+        if (game) {
+            io.in(game_id).emit("go_to_result")
+            console.log("[" + game_id + "]: game just ended")
         }
     })
 

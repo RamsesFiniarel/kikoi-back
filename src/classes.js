@@ -106,6 +106,16 @@ export class game {
   }
 
 
+  reset_variable_for_next_round() {
+    this.current_round += 1
+    this.answer_list = []
+    this.preferred_answer_list = []
+    this.detective_mapping = []
+    this.result_list = []
+    this.point_list = []
+  }
+
+
   add_player(player) {
     if (this.player_id_list.includes(player.player_id)) {
       this.player_connected.push(player)
