@@ -291,42 +291,43 @@ export class game {
 
 
   send_help_answers_and_players(player_id) {
-    let answers = []
-    for (let answer_mapping of this.answer_list) {
-      answers.push(answer_mapping.answer)
-    }
-    answers = shuffle_array(answers)
-
-    let player = this.player_connected.find(player => player.player_id == player_id)
-    let answer_mapping = this.answer_list.find(answer_mapping => answer_mapping.player_id == player.player_id)
-    let my_answer = -1
-    if (answer_mapping) {
-      my_answer = answers.indexOf(answer_mapping.answer)
-    }
-
-    let player_having_answered = this.get_players_having_answered()
-
     let round_info = this.round_list[this.current_round]
-    
-    let state = "choosing_preferred_answer"
-    if (round_info.detective.player_id == player_id) {
-      state = "defining_mapping"
+    let player = this.player_connected.find(player => player.player_id == player_id)
+    if (player) {
+      let answers = []
+      for (let answer_mapping of this.answer_list) {
+        answers.push(answer_mapping.answer)
+      }
+      answers = shuffle_array(answers)
+  
+      let answer_mapping = this.answer_list.find(answer_mapping => answer_mapping.player_id == player.player_id)
+      let my_answer = -1
+      if (answer_mapping) {
+        my_answer = answers.indexOf(answer_mapping.answer)
+      }
+  
+      let player_having_answered = this.get_players_having_answered()
+      
+      let state = "choosing_preferred_answer"
+      if (round_info.detective.player_id == player_id) {
+        state = "defining_mapping"
+      }
+  
+      let help_info = {
+        state: state,
+        round_number: this.current_round,
+        question: round_info.question,
+        is_detective: player.player_id == round_info.detective.player_id,
+        detective: round_info.detective.surname,
+        is_imposter: player.player_id == round_info.imposter.player_id,
+        target: player.player_id == round_info.imposter.player_id ? round_info.target.surname : "",
+        answers: answers,
+        surname_and_id_list: player_having_answered,
+        my_answer: my_answer
+      }
+  
+      player.socket.emit("help_after_dc", help_info)
     }
-
-    let help_info = {
-      state: state,
-      round_number: this.current_round,
-      question: round_info.question,
-      is_detective: player.player_id == round_info.detective.player_id,
-      detective: round_info.detective.surname,
-      is_imposter: player.player_id == round_info.imposter.player_id,
-      target: player.player_id == round_info.imposter.player_id ? round_info.target.surname : "",
-      answers: answers,
-      surname_and_id_list: player_having_answered,
-      my_answer: my_answer
-    }
-
-    player.socket.emit("help_after_dc", help_info)
   }
 
 
@@ -476,6 +477,30 @@ export class game {
 
     this.point_list = point_list
   }
+
+
+  // send user round result after dc
+  send_help_round_result(player_id) {
+    let round_info = this.round_list[this.current_round]
+    let player = this.player_connected.find(player => player.player_id == player_id)
+    if (player) {
+      let help_info = {
+        state: "waiting_round_info",
+        round_number: this.current_round,
+        question: round_info.question,
+        is_detective: player.player_id == round_info.detective.player_id,
+        detective: round_info.detective.surname,
+        is_imposter: player.player_id == round_info.imposter.player_id,
+        target: player.player_id == round_info.imposter.player_id ? round_info.target.surname : "",
+        result_list: this.result_list,
+        point_list: this.point_list,
+        is_last_round: this.current_round == this.round_list.length - 1
+      }
+
+      player.socket.emit("help_after_dc", help_info)
+    }
+  }
+
 }
 
 

@@ -123,6 +123,7 @@ io.on("connection", (socket) => {
                     }
                 }
 
+                // if waiting for users answers, check if player already sent his
                 else if (game.state == "waiting_for_mapping_and_preferred") {
                     let round_info = game.round_list[game.current_round]
                     let is_detective = round_info.detective.player_id == player_id
@@ -139,6 +140,10 @@ io.on("connection", (socket) => {
                             game.send_help_answers_and_players(player_id)
                         }
                     }
+                }
+
+                else if (game.state == "waiting_next_round") {
+                    game.send_help_round_result(player_id)
                 }
             }
         } 
