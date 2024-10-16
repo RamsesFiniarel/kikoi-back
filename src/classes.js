@@ -234,23 +234,6 @@ export class game {
   }
 
 
-  // retrieve player who answered already
-  get_players_having_answered() {
-    let surname_and_id_list = []
-    for (let answer_mapping of this.answer_list) {
-      let player = this.player_connected.find(player => player.player_id == answer_mapping.player_id)
-      if (player) {
-        surname_and_id_list.push({
-          surname: player.surname,
-          player_id: player.player_id
-        })
-      }
-    }
-
-    return surname_and_id_list
-  }
-
-
   // send help waiting for others
   send_help_waiting_for_others(player_id) {
     let round_info = this.round_list[this.current_round]
@@ -328,6 +311,23 @@ export class game {
   
       player.socket.emit("help_after_dc", help_info)
     }
+  }
+
+
+  // retrieve player who answered already
+  get_players_having_answered() {
+    let surname_and_id_list = []
+    for (let answer_mapping of this.answer_list) {
+      let player = this.player_connected.find(player => player.player_id == answer_mapping.player_id)
+      if (player) {
+        surname_and_id_list.push({
+          surname: player.surname,
+          player_id: player.player_id
+        })
+      }
+    }
+
+    return surname_and_id_list
   }
 
 

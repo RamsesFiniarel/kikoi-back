@@ -28,7 +28,32 @@ export let classic_questions = [
     "Pour quelle raison ton voisin de droite pourrait aller en prison ?",
     "Quel animal écrases tout le règne animal en 1v1 ?",
     "Combien de mouches pour mettre ko ton voisin de gauche ?",
-    "Quel est le rituel du matin de ton voisin de gauche ?"
+    "Quel est le rituel du matin de ton voisin de gauche ?",
+    "Quel emoji(s) caractérise le mieux ton voisin de droite ?",
+    "Si tu devais te tatouer un slogan sur le front, que choisirais-tu ?",
+    "Si tu gagnais 1 million d'euros maintenant, qu’en ferais-tu en premier ?",
+    "Quelle est ta plus grande phobie ?",
+    "Si tu pouvais améliorer une partie de ton corps, que choisirais-tu ?",
+    "Quel est ton métier rêvé ?",
+    "Avec argent illimité, où choisis-tu d'habiter ?",
+    "Quelle est la plus grande qualité de ton voisin de gauche, selon toi ?",
+    "Quel artise n'assumes-tu pas d'écouter ?",
+    "Si tu pouvais avoir accès à tous les souvenirs d'une personne, qui choisirais-tu ?",
+    "Quel est ton plus grand défaut, selon toi ?",
+    "Quel est ton jeu vidéo préféré all time ?",
+    "Quel est le jeu vidéo le plus surcôté selon toi ?",
+    "Donne nous une personne que tout le monde trouve magnifique et toi bof ?",
+    "Si tu devais retourner à un moment de ton passé (avec tout tes souvenirs), que choisirais-tu ?",
+    "Tu connais la théorie du chien heureux ? Alors, plutôt chien heureux ou humain normal ?",
+    "Quelle est la première chose que tu ferais si tu devenais invisible ?",
+    "Quel est ton plus gros achat impulsif ?",
+    "Si tu pouvais passer une journée dans le corps d'un animal, lequel choisirais-tu ?",
+    "Si tu devais ne manger qu’un seul plat pour le reste de ta vie, lequel serait-ce ?",
+    "Quel serait à ton avis, le pire métier pour ton voisin de gauche ?",
+    "Quel est le nom de ta maman ? (et le num stp, promis je stocke pas les réponses)",
+    "Quel est ton plus grand rêve d’enfance ?",
+    "Si tu pouvais maîtriser instantanément une compétence, que choisirais-tu ?",
+    "Si tu pouvais apprendre une langue, laquelle choisirais-tu ?",
 ]
 
 export let alcool_questions = [
@@ -42,6 +67,7 @@ export let alcool_questions = [
     "Quel est le meilleur endroit pour faire une soirée ?",
     "Peux-tu me donner un titre de chanson qui parlerait de la soirée de ton voisin de gauche ?",
     "Quelle est la meilleure photo que tu aies prise lors d'une soirée alcoolisée ?",
+    "Comment motiverais-tu ton voisin de droite pour lui faire prendre un shot ?"
 ]
 
 export let limit_questions = [
@@ -52,12 +78,15 @@ export let limit_questions = [
     "Quelle est la chose la plus gênante que tu puisses dire à un inconnu dans un ascenseur ?",
     "Selon toi, quelle est le fétiche de ton voisin de gauche ?",
     "Qu'est ce qui pourrait faire pleurer ton voisin de droite ?",
-    "Quelle rumeur gênante mais crédible pourrait tu balancer sur le détective ?",
-    "Quelle est la chose la plus inappropriée que tu pourrais dire à un militant LGBT ?",
+    "Quelle rumeur gênante mais crédible pourrais tu balancer sur le détective ?",
+    "Quelle est la chose la plus inappropriée que tu pourrais dire à un wokiste ?",
     "Invente un slogan pour le 4ème Reich",
     "Quel politicien aimerais-tu voir faire un strip-tease ?",
     "Quel espèce d'animal choisis-tu pour faire un gangbang ?",
     "Quel hobby inavouable imagines-tu pour ton voisin de droite ?",
     "Si tu étais un dictateur célèbre, qui serais-tu ?",
     "Quelle serait l'introduction de ton discours à l'enterrement du big H ?",
+    "Tu te retrouves nez à nez avec un sosie du H dans la rue, que fais tu ?",
+    "En vrai, quel maman du groupe est top 1 ?",
+    "Quelle est la chose la plus étrange que tu aies vue sur internet ?",
 ]
