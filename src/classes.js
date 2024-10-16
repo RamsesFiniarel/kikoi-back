@@ -50,7 +50,6 @@ export class player_game {
     this.surname = surname
     this.player_id = player_id
     this.socket = socket
-    this.points = 0
   }
 }
 
@@ -98,6 +97,7 @@ export class game {
     this.detective_mapping = []
     this.result_list = []
     this.point_list = []
+
     this.state = "init"
 
     this.init_game(round_number_choice, question_style, player_list)
@@ -112,7 +112,6 @@ export class game {
     this.preferred_answer_list = []
     this.detective_mapping = []
     this.result_list = []
-    this.point_list = []
   }
 
 
@@ -122,6 +121,13 @@ export class game {
 
       let rooms = [...player.socket.rooms]
       if (rooms.includes(this.game_id)) {
+        // if player joined game for first time init point list
+        this.point_list.push({
+          surname: player.surname,
+          player_id: player.player_id,
+          points: 0
+        })
+
         console.log("[" + this.game_id + "]:", player.surname, "joined game")
       } else {
         player.socket.join(this.game_id)
@@ -390,7 +396,7 @@ export class game {
     for (let answer_mapping of this.answer_list) {
       if (chosen_answer.includes(answer_mapping.answer)) {
         player_who_won_preferred_answer.push(answer_mapping.player_id)
-        this.player_connected.find(player => player.player_id == answer_mapping.player_id).points += 1
+        this.point_list.find(player => player.player_id == answer_mapping.player_id).points += 1
       }
     }
 
@@ -404,7 +410,7 @@ export class game {
       }
     }
 
-    this.player_connected.find(player => player.player_id == round_info.detective.player_id).points += player_who_were_correctly_matched.length
+    this.point_list.find(player => player.player_id == round_info.detective.player_id).points += player_who_were_correctly_matched.length
 
 
     // find if detective swapped imposter and target
@@ -413,7 +419,7 @@ export class game {
     const did_detective_swapped_imposter_target = imposter_answer == detective_supposed_target_answer
 
     if (did_detective_swapped_imposter_target) {
-      this.player_connected.find(player => player.player_id == round_info.imposter.player_id).points += 2
+      this.point_list.find(player => player.player_id == round_info.imposter.player_id).points += 2
     }
 
     // find if imposter wrote exactly the same answer as his target
@@ -421,7 +427,7 @@ export class game {
     const did_imposter_wrote_the_same_as_target = imposter_answer == target_answer
 
     if (did_imposter_wrote_the_same_as_target) {
-      this.player_connected.find(player => player.player_id == round_info.imposter.player_id).points += 3
+      this.point_list.find(player => player.player_id == round_info.imposter.player_id).points += 3
     }
 
 
@@ -430,13 +436,13 @@ export class game {
       let answer = answer_mapping.answer
       let preferred_answer = player_who_won_preferred_answer.includes(answer_mapping.player_id)
 
-      let writer = this.player_connected.find(player => player.player_id == answer_mapping.player_id)
+      let writer = this.point_list.find(player => player.player_id == answer_mapping.player_id)
       let writer_surname = writer.surname
 
       let detective_choice_surname_list = []
       for (let detective_choice of this.detective_mapping) {
         if (detective_choice.answer == answer && detective_choice.player_id != writer.player_id) {
-          detective_choice_surname_list.push(this.player_connected.find(player => player.player_id == detective_choice.player_id).surname)
+          detective_choice_surname_list.push(this.point_list.find(player => player.player_id == detective_choice.player_id).surname)
         }
       }
 
@@ -459,23 +465,6 @@ export class game {
       
       this.result_list.push(new_result)
     }
-
-    this.compute_point_list()
-  }
-
-
-  // return mapping between player id and points
-  compute_point_list() {
-    let point_list = []
-    for (let player of this.player_connected) {
-      point_list.push({
-        surname: player.surname,
-        player_id: player.player_id,
-        points: player.points
-      })
-    }
-
-    this.point_list = point_list
   }
 
 
